@@ -13,5 +13,7 @@ Restful service using Node, express, and MySQL as database
 3. **Run the example app**. `npm run start`
 
 4. Open the development server in, `http://localhost:3000`
+   
+   ** Update the `config.js` file with your database name, username and password to connect to the database.
 
 5. Call the service using `http://localhost:3000/users`
