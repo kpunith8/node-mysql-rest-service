@@ -3,6 +3,7 @@ var mysql = require('mysql');
 var cors = require('cors');
 var bodyParser = require('body-parser');
 var config = require('./config');
+var bcrypt = require('bcrypt');
 
 var app = express();
 app.use(cors());
@@ -13,6 +14,14 @@ var con = mysql.createConnection({
   password: config.password,
   database: config.database
 });
+
+function convertPlainTextToCryptPassword(plainText) {
+  return bcrypt.hashSync(plainText, bcrypt.genSaltSync(10));
+}
+
+function isValidPassword(plainText, cryptPassword) {
+  return bcrypt.compareSync(plainText, cryptPassword);
+}
 
 con.connect(function (err) {
   if (err) throw err;
@@ -32,14 +41,27 @@ var port = process.env.PORT || 3000;
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-app.get('/users', function (req, res) {
-  con.query('SELECT DISTINCT u.person_name, u.age FROM user u ORDER BY u.person_name DESC', (err, rows) => {
+app.get('/pass', function (req, res) {
+  con.query('INSERT INTO user_login SET user_name=?, user_id=?, password=?', [user_name, 1, convertPlainTextToCryptPassword('kpunith8')], (err, result) => {
     if (err) throw err;
+    console.log(result);
+  });
+});
 
-    console.log('List of users: ' + JSON.stringify(rows));
+app.get('/users', function (req, res) {
+  con.query('SELECT DISTINCT u.person_name, u.age, u.sex, u.id FROM user u ORDER BY u.person_name DESC', (err, rows) => {
+    if (err) throw err;
     res.json(rows);
   });
 });
+
+app.get('/users/:id', function (req, res) {
+  con.query('SELECT DISTINCT u.person_name, u.age, u.sex, u.id FROM user u WHERE u.id = ?', [req.params.id], (err, rows) => {
+    if (err) throw err;
+    res.json(rows);
+  });
+});
+
 app.post('/users', function (req, res) {
   var id = req.body.id;
   var name = req.body.name;
@@ -51,6 +73,17 @@ app.post('/users', function (req, res) {
     console.log(`Changed ${result.changedRows} row(s)`);
   });
 });
+
+app.post('/userLogin', function (req, res) {
+  var user_name = req.body.userName;
+  var password = req.body.password;
+  con.query('SELECT ul.password FROM user_login ul WHERE ul.user_name=?', [user_name], (err, result) => {
+    if (err) throw err;
+    res.json(isValidPassword(password, result[0].password));
+    console.log('is Valid user: ', isValidPassword(password, result[0].password));
+  });
+});
+
 
 app.listen(port, function () {
   console.log('Running on PORT: ' + port);
