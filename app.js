@@ -49,7 +49,7 @@ app.get('/pass', function (req, res) {
 });
 
 app.get('/users', function (req, res) {
-  con.query('SELECT DISTINCT u.person_name, u.age, u.sex, u.id FROM user u ORDER BY u.person_name DESC', (err, rows) => {
+  con.query('SELECT DISTINCT u.person_name, u.age, u.sex, u.id FROM user u ORDER BY u.person_name ASC', (err, rows) => {
     if (err) throw err;
     res.json(rows);
   });
@@ -62,15 +62,16 @@ app.get('/users/:id', function (req, res) {
   });
 });
 
-app.post('/users', function (req, res) {
+app.post('/addUser', function (req, res) {
   var id = req.body.id;
   var name = req.body.name;
   var age = req.body.age;
   var sex = req.body.sex;
 
-  con.query('UPDATE user SET person_name=?, age=?, sex=? WHERE id=?', [name, age, sex, id], (err, result) => {
+  con.query('INSERT into user(person_name, age, sex) VALUES (?, ?, ?)', [name, age, sex], (err, result) => {
     if (err) throw err;
-    console.log(`Changed ${result.changedRows} row(s)`);
+    console.log('Changed', result.affectedRows, 'rows');
+    res.json(true);
   });
 });
 
